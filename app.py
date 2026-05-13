@@ -3,72 +3,42 @@ import easyocr
 from PIL import Image
 import numpy as np
 
-# 1. Настройка на заглавието и интерфейса
-st.set_page_config(page_title="Скенер за вредни съставки", layout="centered")
-st.title("🔍 Анализатор на етикети")
-st.write("Качете снимка или използвайте камерата, за да проверите за вредни съставки.")
-
-# 2. Дефиниране на база данни с вредни съставки
-# Можете да разширите този списък според вашите нужди
-HARMFUL_INGREDIENTS = {
-    "палмово масло": "Палмово масло (Palm Oil) - високо съдържание на наситени мазнини.",
-    "palm oil": "Palm Oil - high saturated fat content.",
-    "e621": "E621 (Мононатриев глутамат) - подобрител на вкуса, може да предизвика реакции.",
-    "msg": "MSG (Monosodium Glutamate) - flavor enhancer.",
-    "аспартам": "Аспартам (E951) - изкуствен подсладител.",
-    "aspartame": "Aspartame (E951) - artificial sweetener.",
-    "хидрогенирани": "Хидрогенирани мазнини - източник на вредни транс-мазнини.",
-    "hydrogenated": "Hydrogenated fats - source of trans fats.",
-    "захар": "Високо съдържание на захар.",
-    "sugar": "High sugar content."
+HARMFUL_DB = {
+    "E102": {"name": "Тартразин / Tartrazine / Tartrazin", "risk": "Висок"},
+    "E104": {"name": "Хинолиново жълто / Quinoline Yellow / Chinolingelb", "risk": "Висок"},
+    "E110": {"name": "Сънсет жълто / Sunset Yellow / Gelborange S", "risk": "Висок"},
+    "E122": {"name": "Азорубин / Azorubine / Azorubin", "risk": "Висок"},
+    "E124": {"name": "Понсо 4R / Ponceau 4R / Cochenillerot A", "risk": "Висок"},
+    "E127": {"name": "Еритрозин / Erythrosine / Erythrosin", "risk": "Висок"},
+    "E129": {"name": "Алура червено / Allura Red / Allurarot AC", "risk": "Висок"},
+    "E210": {"name": "Бензоена киселина / Benzoic Acid / Benzoesäure", "risk": "Среден"},
+    "E211": {"name": "Натриев бензоат / Sodium Benzoate / Natriumbenzoat", "risk": "Среден"},
+    "E249": {"name": "Калиев нитрит / Potassium Nitrite / Kaliumnitrit", "risk": "Висок"},
+    "E250": {"name": "Натриев нитрит / Sodium Nitrite / Natriumnitrit", "risk": "Висок"},
+    "E251": {"name": "Натриев нитрат / Sodium Nitrate / Natriumnitrat", "risk": "Среден"},
+    "E621": {"name": "Мононатриев глутамат / Monosodium Glutamate / Glutamat", "risk": "Среден"},
+    "E622": {"name": "Монокалиев глутамат / Monopotassium Glutamate", "risk": "Среден"},
+    "E951": {"name": "Аспартам / Aspartame / Aspartam", "risk": "Висок"},
+    "E952": {"name": "Цикламова киселина / Cyclamic Acid / Cyclamat", "risk": "Висок"},
+    "palm oil": {"name": "Палмово масло / Palm oil / Palmöl", "risk": "Среден"},
+    "trans fats": {"name": "Трансмазнини / Trans fats / Transfette", "risk": "Висок"}
 }
 
-# 3. Инициализиране на EasyOCR (зарежда се веднъж)
-@st.cache_resource
-def load_ocr():
-    # Зареждаме български и английски език
-    return easyocr.Reader(['bg', 'en'])
+st.title("AI Detector")
 
-reader = load_ocr()
+langs = st.multiselect("Избор на езици:", ['bg', 'en', 'de', 'ru', 'fr', 'tr', 'el'], default=['bg', 'en'])
 
-# 4. Избор на метод за качване
-option = st.radio("Изберете метод:", ("Качване на снимка", "Използване на камера"))
+uploaded_file = st.file_uploader("Качване на етикет", type=["jpg", "png", "jpeg"])
 
-if option == "Качване на снимка":
-    uploaded_file = st.file_uploader("Изберете изображение...", type=["jpg", "jpeg", "png"])
-else:
-    uploaded_file = st.camera_input("Снимайте етикета")
-
-if uploaded_file is not None:
-    # Отваряне на изображението с Pillow
+if uploaded_file:
     image = Image.open(uploaded_file)
-    st.image(image, caption='Обработвана снимка', use_column_width=True)
+    st.image(image)
     
-    with st.spinner('Анализиране на текста... моля изчакайте.'):
-        # Превръщане на изображението в NumPy масив за EasyOCR
-        img_array = np.array(image)
-        
-        # Извличане на текст
-        results = reader.readtext(img_array, detail=0)
+    if st.button("Анализ"):
+        reader = easyocr.Reader(langs)
+        results = reader.readtext(np.array(image), detail=0)
         full_text = " ".join(results).lower()
         
-        st.subheader("Резултати от анализа:")
-        
-        found_harmful = []
-        
-        # Проверка за вредни съставки
-        for ingredient, description in HARMFUL_INGREDIENTS.items():
-            if ingredient in full_text:
-                found_harmful.append(description)
-        
-        # Показване на резултатите
-        if found_harmful:
-            st.error("⚠️ Внимание! Намерени са потенциално вредни съставки:")
-            for item in found_harmful:
-                st.write(f"- {item}")
-        else:
-            st.success("✅ Не са открити съставки от списъка с вредни вещества.")
-            
-        # Възможност за преглед на целия разпознат текст (за проверка)
-        with st.expander("Виж разпознатия текст"):
-            st.write(full_text)
+        for key, data in HARMFUL_DB.items():
+            if key.lower() in full_text or any(name.strip().lower() in full_text for name in data['name'].split("/")):
+                st.write(f"Намерено: {data['name']} - Риск: {data['risk']}")
