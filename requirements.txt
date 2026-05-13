@@ -1,2 +1,5 @@
-streamlit run app.py
-pip install streamlit easyocr pillow numpy
+streamlit
+easyocr
+pillow
+numpy
+opencv-python-headless
