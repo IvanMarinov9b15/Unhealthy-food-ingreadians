@@ -35,10 +35,21 @@ if uploaded_file:
     st.image(image)
     
     if st.button("Анализ"):
-        reader = easyocr.Reader(langs)
-        results = reader.readtext(np.array(image), detail=0)
-        full_text = " ".join(results).lower()
-        
-        for key, data in HARMFUL_DB.items():
-            if key.lower() in full_text or any(name.strip().lower() in full_text for name in data['name'].split("/")):
-                st.write(f"Намерено: {data['name']} - Риск: {data['risk']}")
+        try:
+            with st.spinner('Анализиране...'):
+                reader = easyocr.Reader(langs)
+                results = reader.readtext(np.array(image), detail=0)
+                full_text = " ".join(results).lower()
+                
+                found_items = []
+                for key, data in HARMFUL_DB.items():
+                    if key.lower() in full_text or any(name.strip().lower() in full_text for name in data['name'].split("/")):
+                        found_items.append(f"{data['name']} - Риск: {data['risk']}")
+                
+                if found_items:
+                    for item in found_items:
+                        st.write(f"Намерено: {item}")
+                else:
+                    st.success("Не са открити вредни съставки.")
+        except Exception as e:
+            st.error(f"Грешка при разпознаването: {e}")
