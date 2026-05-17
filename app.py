@@ -10,10 +10,9 @@ def load_ocr_reader():
 
 reader = load_ocr_reader()
 
-# Обновена и разширена база данни, съобразена напълно с американския етикет
 OREO_INGREDIENTS_DB = [
     {
-        "keywords": ["unbleached", "enriched flour", "wheat flour", "пшенично", "брашно"],
+        "keywords": ["flour", "wheat", "пшенично", "брашно"],
         "name": "Неизбелено обогатено пшенично брашно (Unbleached Enriched Flour)",
         "type": "Невредна",
         "risk": "Безопасна",
@@ -21,7 +20,7 @@ OREO_INGREDIENTS_DB = [
         "category": "Базови съставки"
     },
     {
-        "keywords": ["niacin", "reduced iron", "thiamine", "mononitrate", "riboflavin", "folic acid"],
+        "keywords": ["niacin", "iron", "thiamin", "ribofl", "folic"],
         "name": "Обогатители за брашно (Витамини B1, B2, B3, Фолиева киселина и Желязо)",
         "type": "Невредна",
         "risk": "Безопасна",
@@ -37,7 +36,7 @@ OREO_INGREDIENTS_DB = [
         "category": "Въглехидрати / Захари"
     },
     {
-        "keywords": ["palm", "canola oil", "палмово"],
+        "keywords": ["palm", "canola", "pali", "палмово"],
         "name": "Палмово масло и/или Канолово масло (Palm and/or Canola Oil)",
         "type": "Вредна",
         "risk": "Висока",
@@ -49,11 +48,11 @@ OREO_INGREDIENTS_DB = [
         "name": "Какао, обработено с алкали (Cocoa - Processed with Alkali)",
         "type": "Невредна",
         "risk": "Безопасна",
-        "problems": "Преминало през алкализация ('холандски процес') за намаляване на горчивината и потъмняване на цвета. Напълно безопасно, запазва част от естествените какаови антиоксиданти.",
+        "problems": "Преминало през алкализация ('холандски процес') за намаляване на горчивината и потъмняване на цвета. Напълно безопасно.",
         "category": "Базови съставки"
     },
     {
-        "keywords": ["high fructose", "corn syrup", "глюкозо", "фруктозен"],
+        "keywords": ["fruct", "corn", "syrup", "глюкозо", "фруктозен"],
         "name": "Глюкозо-фруктозен сироп от царевица (High Fructose Corn Syrup)",
         "type": "Вредна",
         "risk": "Висока",
@@ -61,15 +60,15 @@ OREO_INGREDIENTS_DB = [
         "category": "Въглехидрати / Захари"
     },
     {
-        "keywords": ["baking soda", "e500", "sodium hydrogen"],
-        "name": "Сода бикарбонат (Baking Soda / Натриев хидрогенкарбонат)",
+        "keywords": ["soda", "baking", "leaven", "e500", "натриев"],
+        "name": "Сода бикарбонат (Baking Soda / Набухвател)",
         "type": "Невредна",
         "risk": "Безопасна",
         "problems": "Стандартен и напълно безопасен набухвател, чиято роля е да помогне на бисквитката да бухне при печене.",
         "category": "Набухватели"
     },
     {
-        "keywords": ["calcium phosphate", "калциев фосфат"],
+        "keywords": ["calcium", "phosphat", "калциев", "фосфат"],
         "name": "Калциев фосфат (Calcium Phosphate)",
         "type": "Невредна",
         "risk": "Безопасна",
@@ -77,7 +76,7 @@ OREO_INGREDIENTS_DB = [
         "category": "Набухватели"
     },
     {
-        "keywords": ["cornstarch", "нишесте"],
+        "keywords": ["starch", "niis", "нишесте"],
         "name": "Царевично нишесте (Cornstarch)",
         "type": "Невредна",
         "risk": "Безопасна",
@@ -93,15 +92,15 @@ OREO_INGREDIENTS_DB = [
         "category": "Базови съставки"
     },
     {
-        "keywords": ["soy lecithin", "soya", "соев лецитин", "e322"],
+        "keywords": ["lecit", "lcith", "soya", "soy", "лецитин"],
         "name": "Соев лецитин (Soy Lecithin)",
         "type": "Невредна",
         "risk": "Безопасна",
-        "problems": "Натурален емулгатор, който не позволява на мазнините и водата в продукта да се отделят. Полезен за нервната система и черния дроб.",
+        "problems": "Натурален емулгатор, който не позволява на мазнините и водата в продукта да се отделят. Полезен за нервната система.",
         "category": "Емулгатори"
     },
     {
-        "keywords": ["vanillin", "artificial flavor", "ароматизант"],
+        "keywords": ["vanill", "flavor", "artificial", "ароматизант"],
         "name": "Изкуствен ароматизант - Ванилин (Vanillin - An Artificial Flavor)",
         "type": "Невредна",
         "risk": "Безопасна",
@@ -109,7 +108,7 @@ OREO_INGREDIENTS_DB = [
         "category": "Ароматизанти"
     },
     {
-        "keywords": ["chocolate", "шоколад"],
+        "keywords": ["chocol", "шоколад"],
         "name": "Шоколад (Chocolate)",
         "type": "Невредна",
         "risk": "Безопасна",
