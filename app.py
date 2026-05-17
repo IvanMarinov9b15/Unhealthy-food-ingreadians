@@ -60,7 +60,7 @@ OREO_INGREDIENTS_DB = [
         "category": "Въглехидрати / Захари"
     },
     {
-        "keywords": ["e501", "potassium hydrogen"],
+        "keywords": ["e501", "potassium hydrogen", "калиев"],
         "name": "E501(ii) - Калиев хидрогенкарбонат / Калиеви карбонати",
         "type": "Спорна",
         "risk": "Средна",
@@ -68,7 +68,7 @@ OREO_INGREDIENTS_DB = [
         "category": "Набухватели"
     },
     {
-        "keywords": ["e503", "ammonium hydrogen"],
+        "keywords": ["e503", "ammonium hydrogen", "амониев"],
         "name": "E503(ii) - Амониев хидрогенкарбонат / Амониеви карбонати",
         "type": "Спорна",
         "risk": "Средна",
@@ -76,7 +76,7 @@ OREO_INGREDIENTS_DB = [
         "category": "Набухватели"
     },
     {
-        "keywords": ["e500", "sodium hydrogen", "bicarbonate"],
+        "keywords": ["e500", "sodium hydrogen", "bicarbonate", "натриев"],
         "name": "E500(ii) - Натриев хидрогенкарбонат / Сода бикарбонат",
         "type": "Невредна",
         "risk": "Безопасна",
@@ -118,7 +118,7 @@ OREO_INGREDIENTS_DB = [
 ]
 
 st.sidebar.title("Проект: Сканиране на Oreo")
-choice = st.sidebar.radio("Премени към:", [
+choice = st.sidebar.radio("Премини към:", [
     "Сканиране на етикет", 
     "Ръчна проверка на съставки", 
     "Здравословни алтернативи"
@@ -128,7 +128,7 @@ if choice == "Сканиране на етикет":
     st.title("Интелигентен Скенер за Сладкарски Етикети")
     st.write("Качете или заснемете задния етикет на бисквити Oreo, за да анализирате съставките му.")
     
-    upload_type = st.radio("Изберете метод:", ["Качване на файл", "Използване на充amera"])
+    upload_type = st.radio("Изберете метод:", ["Качване на файл", "Използване на камера"])
     
     uploaded_file = None
     if upload_type == "Качване на файл":
