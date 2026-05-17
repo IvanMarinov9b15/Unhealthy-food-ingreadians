@@ -2,54 +2,173 @@ import streamlit as st
 import easyocr
 from PIL import Image
 import numpy as np
+import re
 
-HARMFUL_DB = {
-    "E102": {"name": "Тартразин / Tartrazine / Tartrazin", "risk": "Висок"},
-    "E104": {"name": "Хинолиново жълто / Quinoline Yellow / Chinolingelb", "risk": "Висок"},
-    "E110": {"name": "Сънсет жълто / Sunset Yellow / Gelborange S", "risk": "Висок"},
-    "E122": {"name": "Азорубин / Azorubine / Azorubin", "risk": "Висок"},
-    "E124": {"name": "Понсо 4R / Ponceau 4R / Cochenillerot A", "risk": "Висок"},
-    "E127": {"name": "Еритрозин / Erythrosine / Erythrosin", "risk": "Висок"},
-    "E129": {"name": "Алура червено / Allura Red / Allurarot AC", "risk": "Висок"},
-    "E210": {"name": "Бензоена киселина / Benzoic Acid / Benzoesäure", "risk": "Среден"},
-    "E211": {"name": "Натриев бензоат / Sodium Benzoate / Natriumbenzoat", "risk": "Среден"},
-    "E249": {"name": "Калиев нитрит / Potassium Nitrite / Kaliumnitrit", "risk": "Висок"},
-    "E250": {"name": "Натриев нитрит / Sodium Nitrite / Natriumnitrit", "risk": "Висок"},
-    "E251": {"name": "Натриев нитрат / Sodium Nitrate / Natriumnitrat", "risk": "Среден"},
-    "E621": {"name": "Мононатриев глутамат / Monosodium Glutamate / Glutamat", "risk": "Среден"},
-    "E622": {"name": "Монокалиев глутамат / Monopotassium Glutamate", "risk": "Среден"},
-    "E951": {"name": "Аспартам / Aspartame / Aspartam", "risk": "Висок"},
-    "E952": {"name": "Цикламова киселина / Cyclamic Acid / Cyclamat", "risk": "Висок"},
-    "palm oil": {"name": "Палмово масло / Palm oil / Palmöl", "risk": "Среден"},
-    "trans fats": {"name": "Трансмазнини / Trans fats / Transfette", "risk": "Висок"}
+@st.cache_resource
+def load_ocr_reader():
+    return easyocr.Reader(['bg', 'en'])
+
+reader = load_ocr_reader()
+
+OREO_INGREDIENTS_DB = {
+    "палмово масло": {
+        "name": "Палмово масло / Растителна мазнина (палмова)",
+        "type": "Вредна",
+        "risk": "Висока",
+        "problems": "Изключително богато на наситени мастни киселини. Честата му консумация повишава нивата на 'лошия' холестерол (LDL), запушва артериите и драстично увеличава риска от инфаркт, инсулт и развитие на захарен диабет тип 2.",
+        "category": "Вредни мазнини"
+    },
+    "захар": {
+        "name": "Рафинирана бяла захар / Глюкозо-фруктозен сироп",
+        "type": "Вредна",
+        "risk": "Висока",
+        "problems": "Бисквитите Oreo съдържат изключително високо количество захар. Тя води до бързи пикове в кръвната захар, претоварва панкреаса, причинява зъбен кариес, затлъстяване и води до силна поведенческа зависимост (желание за още сладко), особено при децата.",
+        "category": "Въглехидрати / Захари"
+    },
+    "E503": {
+        "name": "Амониеви карбонати (Амониев хидрогенкарбонат - Набухвател)",
+        "type": "Спорна",
+        "risk": "Средна",
+        "problems": "Използва се като набухвател в сладкарството. Въпреки че се изпарява при печене, остатъчни микроколичества или честа консумация могат да раздразнят стомашната лигавица и да причинят лек дискомфорт при хора с чувствителен стомах.",
+        "category": "Набухватели"
+    },
+    "E500": {
+        "name": "Натриеви карбонати (Сода бикарбонат - Набухвател)",
+        "type": "Невредна",
+        "risk": "Безопасна",
+        "problems": "Стандартен набухвател. В големи количества обаче може да промени киселинността в стомаха и да доведе до леко подуване или газове.",
+        "category": "Набухватели"
+    },
+    "пшенично брашно": {
+        "name": "Пшенично брашно",
+        "type": "Невредна",
+        "risk": "Безопасна",
+        "problems": "Основна структурна съставка. Естествен източник на въглехидрати. Изисква внимание единствено при хора с глутенова непоносимост (целиакия).",
+        "category": "Базови съставки"
+    },
+    "какао": {
+        "name": "Нискомаслено какао на прах",
+        "type": "Невредна",
+        "risk": "Безопасна",
+        "problems": "Дава характерния тъмен цвят и вкус на Oreo. Какаото съдържа естествени антиоксиданти (флавоноиди), които са полезни за сърцето и подобряват настроението.",
+        "category": "Базови съставки"
+    },
+    "E322": {
+        "name": "Соев лецитин (Емулгатор)",
+        "type": "Невредна",
+        "risk": "Безопасна",
+        "problems": "Естествен емулгатор, който свързва мазнините и водата в хомогенна смес. Лецитинът всъщност е полезен за организма – подпомага паметта, функцията на черния дроб и изграждането на клетъчните мембрани.",
+        "category": "Емулгатори"
+    },
+    "ванилин": {
+        "name": "Ароматизант (Ванилин)",
+        "type": "Невредна",
+        "risk": "Безопасна",
+        "problems": "Синтетичен аналог на ванилията за подобряване на аромата. В използваните индустриални количества е напълно безопасен за здравето.",
+        "category": "Ароматизанти"
+    }
 }
 
-st.title("AI Detector")
+st.sidebar.title(" Проект: Сканиране на Oreo")
+choice = st.sidebar.radio("Премени към:", [
+    " Сканиране на етикет", 
+    " Ръчна проверка на съставки", 
+    " Здравословни алтернативи"
+])
 
-langs = st.multiselect("Избор на езици:", ['bg', 'en', 'de', 'ru', 'fr', 'tr', 'el'], default=['bg', 'en'])
-
-uploaded_file = st.file_uploader("Качване на етикет", type=["jpg", "png", "jpeg"])
-
-if uploaded_file:
-    image = Image.open(uploaded_file)
-    st.image(image)
+if choice == " Сканиране на етикет":
+    st.title(" Интелигентен Скенер за Сладкарски Етикети")
+    st.write("Качете или заснемете задния етикет на бисквити Oreo (или друг сладкиш), за да анализирате съставките му.")
     
-    if st.button("Анализ"):
-        try:
-            with st.spinner('Анализиране...'):
-                reader = easyocr.Reader(langs)
-                results = reader.readtext(np.array(image), detail=0)
-                full_text = " ".join(results).lower()
-                
-                found_items = []
-                for key, data in HARMFUL_DB.items():
-                    if key.lower() in full_text or any(name.strip().lower() in full_text for name in data['name'].split("/")):
-                        found_items.append(f"{data['name']} - Риск: {data['risk']}")
-                
-                if found_items:
-                    for item in found_items:
-                        st.write(f"Намерено: {item}")
+    upload_type = st.radio("Изберете метод:", ["Качване на файл", "Използване на充емара"])
+    
+    uploaded_file = None
+    if upload_type == "Качване на файл":
+        uploaded_file = st.file_uploader("Качете снимка на етикет (PNG, JPG):", type=["jpg", "jpeg", "png"])
+    else:
+        uploaded_file = st.camera_input("Снимайте етикета тук")
+        
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        st.image(image, caption="Зареден етикет за анализ", use_container_width=True)
+        
+        with st.spinner("Изкуственият интелект чете етикета..."):
+            img_np = np.array(image)
+            ocr_text_list = reader.readtext(img_np, detail=0)
+            full_text = " ".join(ocr_text_list).lower()
+            
+        st.subheader(" Разпознат текст от опаковката:")
+        with st.expander("Виж прочетения текст"):
+            st.write(full_text)
+            
+        st.subheader(" Анализ на съставките в продукта:")
+        
+        found_any = False
+        
+        for key, info in OREO_INGREDIENTS_DB.items():
+            pattern = key.replace("e", "[eе]\\s*") if key.startswith("E") else key
+            if re.search(pattern, full_text):
+                found_any = True
+                if info["type"] == "Вредна":
+                    st.error(f" **Опасност! Намерена съставка:** {info['name']}")
+                    st.markdown(f"* **Категория:** {info['category']} | **Степен на риск:** {info['risk']}")
+                    st.markdown(f"* ** Здравословни проблеми:** {info['problems']}")
+                elif info["type"] == "Спорна":
+                    st.warning(f" **Спорна съставка:** {info['name']}")
+                    st.markdown(f"* **Категория:** {info['category']} | **Степен на риск:** {info['risk']}")
+                    st.markdown(f"* ** Бележка:** {info['problems']}")
                 else:
-                    st.success("Не са открити вредни съставки.")
-        except Exception as e:
-            st.error(f"Грешка при разпознаването: {e}")
+                    st.success(f" **Безопасна съставка:** {info['name']}")
+                    st.markdown(f"* **Категория:** {info['category']} | **Ефект/Полза:** {info['problems']}")
+                st.markdown("---")
+                
+        if not found_any:
+            st.info("Не са открити познати съставки от базата данни на Oreo. Опитайте с по-ясно изображение.")
+
+elif choice == "🔍 Ръчна проверка на съставки":
+    st.title("🔍 Ръчно търсене в сладкарската база данни")
+    st.write("Въведете съставка или Е-номер ръчно (напр. палмово масло, захар, E322, E503), за да разберете значението ѝ.")
+    
+    query = st.text_input("Въведете име или номер на добавка:").strip().lower()
+    query = query.replace("е", "e")
+    
+    if query:
+        matched = False
+        for key, info in OREO_INGREDIENTS_DB.items():
+            if query in key.lower() or query in info["name"].lower():
+                matched = True
+                if info["type"] == "Вредна":
+                    st.error(f" **{info['name']}**")
+                    st.markdown(f"* **Категория:** {info['category']} | **Ниво на риск:** {info['risk']}")
+                    st.markdown(f"* ** Здравословни проблеми:** {info['problems']}")
+                elif info["type"] == "Спорна":
+                    st.warning(f" **{info['name']}**")
+                    st.markdown(f"* **Категория:** {info['category']} | **Ниво на риск:** {info['risk']}")
+                    st.markdown(f"*  Бележка: {info['problems']}")
+                else:
+                    st.success(f" {info['name']}")
+                    st.markdown(f"* Категория: {info['category']} | Въздействие: {info['problems']}")
+                st.markdown("---")
+        if not matched:
+            st.warning("Съставката не е намерена. Моля, проверете изписването.")
+
+elif choice == " Здравословни алтернативи":
+    st.title(" По-добрият избор: Здравословни алтернативи")
+    st.write("Индустриалните сладкиши като Oreo са направени да издържат с месеци по складовете благодарение на палмовата мазнина. Ето как да задоволим глада за сладко по здравословен начин:")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("###  Избягвай или намали:")
+        st.error(" Купени бисквити със заливки (Пълни с палмово масло, което вреди на сърцето)")
+        st.error(" Рафинирана бяла захар (Води до рязък спад на енергията, умора и кариеси)")
+        st.error(" Продукти с дълъг срок на годност (Наситени с химически консерванти)")
+        
+    with col2:
+        st.markdown("### " + " Замени със здравословни:")
+        st.success(" Домашни бананово-овесени бисквити (Направени само с овесени ядки, намачкан банан, истинско какао и малко мед)")
+        st.success(" Черен шоколад (Над 70% какао – богат на антиоксиданти и без палмова мазнина)")
+        st.success(" Фурми или сушени плодове (Естествен източник на захари, фибри и енергия)")
+        
+    st.markdown("---")
+    st.info(" Златно правило: Когато ви се хапва Oreo, опитайте се да го комбинирате с плод или просто си направете бързи домашни какаови бисквити. Вашето тяло ще ви благодари!")
